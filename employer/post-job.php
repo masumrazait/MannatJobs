@@ -102,11 +102,11 @@ include __DIR__ . '/../includes/header.php';
                 </select>
             </div>
             <div class="col-md-6">
-                <label class="form-label">Salary Minimum</label>
+                <label class="form-label">Salary Minimum (INR)</label>
                 <input type="number" class="form-control" name="salary_min" min="0" placeholder="e.g. 80000">
             </div>
             <div class="col-md-6">
-                <label class="form-label">Salary Maximum</label>
+                <label class="form-label">Salary Maximum (INR)</label>
                 <input type="number" class="form-control" name="salary_max" min="0" placeholder="e.g. 120000">
             </div>
             <div class="col-md-6">

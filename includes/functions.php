@@ -4,6 +4,23 @@ function e($value)
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function formatIndianRupees($amount)
+{
+    if ($amount === null || $amount === '') {
+        return 'Salary not disclosed';
+    }
+
+    $number = number_format((float)$amount, 0, '.', '');
+    if (strlen($number) <= 3) {
+        return '₹' . $number;
+    }
+
+    $lastThree = substr($number, -3);
+    $remaining = substr($number, 0, -3);
+    $remaining = preg_replace('/(?<=\d)(?=(\d{2})+$)/', ',', $remaining);
+    return '₹' . $remaining . ',' . $lastThree;
+}
+
 function sanitize($value)
 {
     if (is_array($value)) {

@@ -45,6 +45,10 @@ include __DIR__ . '/includes/header.php';
                 <span class="job-badge bg-primary text-white"><?php echo e($job['job_type']); ?></span>
             </div>
 
+            <?php if ($job['salary_min'] !== null): ?>
+                <p class="text-muted mb-4"><strong>Salary:</strong> <?php echo e(formatIndianRupees($job['salary_min']) . ' - ' . formatIndianRupees($job['salary_max'])); ?></p>
+            <?php endif; ?>
+
             <?php if ($job['status'] !== 'approved'): ?>
                 <div class="alert alert-warning" role="status">
                     This listing is currently <?php echo e($job['status']); ?> and is not visible to public job seekers.

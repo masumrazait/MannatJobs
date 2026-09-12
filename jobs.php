@@ -113,7 +113,7 @@ include __DIR__ . '/includes/header.php';
                     </div>
                     <p class="mt-3 mb-3"><?php echo substr(strip_tags($job['description']), 0, 180); ?>...</p>
                     <div class="d-flex justify-content-between align-items-center">
-                        <small class="text-muted"><?php echo $job['salary_min'] ? 'PKR ' . number_format($job['salary_min']) . ' - ' . number_format($job['salary_max']) : 'Salary not disclosed'; ?></small>
+                        <small class="text-muted"><?php echo $job['salary_min'] !== null ? e(formatIndianRupees($job['salary_min']) . ' - ' . formatIndianRupees($job['salary_max'])) : 'Salary not disclosed'; ?></small>
                         <a href="<?php echo e(url('job-details.php?id=' . (int)$job['id'])); ?>" class="btn btn-primary">View Details</a>
                     </div>
                 </div>

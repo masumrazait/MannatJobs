@@ -22,6 +22,55 @@ body {
     background: var(--paper);
     color: var(--ink);
     min-width: 320px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+    width: 100%;
+}
+
+.site-footer {
+    flex: 0 0 auto;
+    padding: 42px 0 24px;
+    background: #202427 !important;
+}
+
+.site-footer h5,
+.site-footer h6 {
+    color: #fff;
+}
+
+.site-footer h6 {
+    margin-bottom: 14px;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.footer-copy {
+    max-width: 600px;
+    color: rgba(255, 255, 255, 0.64);
+    line-height: 1.75;
+}
+
+.site-footer li + li {
+    margin-top: 8px;
+}
+
+.site-footer a {
+    transition: color 160ms ease;
+}
+
+.site-footer a:hover {
+    color: #fff !important;
+}
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.48);
 }
 
 h1,

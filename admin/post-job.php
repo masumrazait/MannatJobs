@@ -48,8 +48,8 @@ include __DIR__ . '/../includes/header.php';
             <div class="col-md-6"><label class="form-label">Category</label><select class="form-select" name="category_id" required><option value="">Choose category</option><?php while ($category = $categories->fetch_assoc()): ?><option value="<?php echo (int)$category['id']; ?>"><?php echo e($category['name']); ?></option><?php endwhile; ?></select></div>
             <div class="col-md-6"><label class="form-label">Location</label><input class="form-control" name="location" required></div>
             <div class="col-md-6"><label class="form-label">Job Type</label><select class="form-select" name="job_type"><option>Full-time</option><option>Part-time</option><option>Remote</option><option>Internship</option></select></div>
-            <div class="col-md-6"><label class="form-label">Minimum Salary</label><input class="form-control" type="number" min="0" name="salary_min"></div>
-            <div class="col-md-6"><label class="form-label">Maximum Salary</label><input class="form-control" type="number" min="0" name="salary_max"></div>
+            <div class="col-md-6"><label class="form-label">Minimum Salary (INR)</label><input class="form-control" type="number" min="0" name="salary_min"></div>
+            <div class="col-md-6"><label class="form-label">Maximum Salary (INR)</label><input class="form-control" type="number" min="0" name="salary_max"></div>
             <div class="col-md-6"><label class="form-label">Experience Level</label><input class="form-control" name="experience_level"></div>
             <div class="col-md-6"><label class="form-label">Deadline</label><input class="form-control" type="date" name="deadline"></div>
             <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" rows="5" name="description" required></textarea></div>
