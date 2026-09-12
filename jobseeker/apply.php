@@ -15,12 +15,14 @@ if (!$job) {
     setFlash('danger', 'This job is not available for application.');
     redirect('jobs.php');
 }
-$profile = $conn->query('SELECT resume_path FROM jobseeker_profiles WHERE user_id = ' . (int)$_SESSION['user_id'])->fetch_assoc() ?: [];
-$savedResume = $profile['resume_path'] ?? null;
+$profile = $conn->query('SELECT resume_path, resume_data, resume_mime FROM jobseeker_profiles WHERE user_id = ' . (int)$_SESSION['user_id'])->fetch_assoc() ?: [];
+$savedResume = !empty($profile['resume_data']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $coverLetter = sanitize($_POST['cover_letter'] ?? '');
-    $resumePath = $savedResume;
+    $resumePath = null;
+    $resumeData = $profile['resume_data'] ?? null;
+    $resumeMime = $profile['resume_mime'] ?? null;
 
     $existing = $conn->prepare('SELECT id FROM applications WHERE job_id = ? AND jobseeker_id = ? LIMIT 1');
     $existing->bind_param('ii', $jobId, $_SESSION['user_id']);
@@ -31,11 +33,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_FILES['resume']) && $_FILES['resume']['error'] === UPLOAD_ERR_OK) {
-        $upload = uploadFile($_FILES['resume'], __DIR__ . '/../uploads/resumes', ['pdf'], 2 * 1024 * 1024);
+        $upload = readUploadedResume($_FILES['resume']);
         if ($upload['success']) {
-            $resumePath = uploadRelativePath($upload['path']);
-            $saveResume = $conn->prepare('UPDATE jobseeker_profiles SET resume_path = ? WHERE user_id = ?');
-            $saveResume->bind_param('si', $resumePath, $_SESSION['user_id']);
+            $resumePath = null;
+            $resumeData = $upload['data'];
+            $resumeMime = $upload['mime'];
+            $saveResume = $conn->prepare('UPDATE jobseeker_profiles SET resume_path = NULL, resume_data = ?, resume_mime = ? WHERE user_id = ?');
+            $saveResume->bind_param('bsi', $resumeData, $resumeMime, $_SESSION['user_id']);
+            $saveResume->send_long_data(0, $resumeData);
             $saveResume->execute();
         } else {
             setFlash('danger', $upload['message']);
@@ -43,13 +48,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    if (!$resumePath) {
+    if ($resumeData === null) {
         setFlash('warning', 'Please upload your resume once from your profile before applying.');
         redirect('jobseeker/profile.php');
     }
 
-    $stmt = $conn->prepare('INSERT INTO applications (job_id, jobseeker_id, resume_path, cover_letter, status) VALUES (?, ?, ?, ?, "applied")');
-    $stmt->bind_param('iiss', $jobId, $_SESSION['user_id'], $resumePath, $coverLetter);
+    $stmt = $conn->prepare('INSERT INTO applications (job_id, jobseeker_id, resume_path, resume_data, resume_mime, cover_letter, status) VALUES (?, ?, ?, ?, ?, ?, "applied")');
+    $stmt->bind_param('iisbss', $jobId, $_SESSION['user_id'], $resumePath, $resumeData, $resumeMime, $coverLetter);
+    $stmt->send_long_data(3, $resumeData ?? '');
     if ($stmt->execute()) {
         setFlash('success', 'Your application was submitted successfully.');
         redirect('jobseeker/applications.php');
@@ -70,7 +76,7 @@ include __DIR__ . '/../includes/header.php';
             <?php if ($savedResume): ?>
                 <div class="saved-file d-flex align-items-center justify-content-between gap-3">
                     <span><strong>Saved resume ready</strong><small class="d-block text-muted">You can use it for this application or upload a replacement.</small></span>
-                    <a href="<?php echo e(url($savedResume)); ?>" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">View PDF</a>
+                    <a href="<?php echo e(resumeUrl('profile', $_SESSION['user_id'])); ?>" class="btn btn-sm btn-outline-primary" target="_blank" rel="noopener">View PDF</a>
                 </div>
                 <input type="file" class="form-control mt-2" name="resume" accept="application/pdf">
             <?php else: ?>

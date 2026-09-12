@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('employer/applicants.php');
 }
 
-$applications = $conn->query('SELECT a.*, j.title AS job_title, u.name AS candidate_name, u.email AS candidate_email, p.skills, p.experience, p.degree, p.university, p.profession, p.profile_photo FROM applications a INNER JOIN jobs j ON j.id = a.job_id INNER JOIN users u ON u.id = a.jobseeker_id LEFT JOIN jobseeker_profiles p ON p.user_id = a.jobseeker_id WHERE j.employer_id = ' . (int)$_SESSION['user_id'] . ' ORDER BY a.applied_at DESC');
+$applications = $conn->query('SELECT a.*, j.title AS job_title, u.name AS candidate_name, u.email AS candidate_email, p.skills, p.experience, p.degree, p.university, p.profession, p.profile_photo, p.profile_photo_data FROM applications a INNER JOIN jobs j ON j.id = a.job_id INNER JOIN users u ON u.id = a.jobseeker_id LEFT JOIN jobseeker_profiles p ON p.user_id = a.jobseeker_id WHERE j.employer_id = ' . (int)$_SESSION['user_id'] . ' ORDER BY a.applied_at DESC');
 $pageTitle = 'Applicants';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -42,14 +42,14 @@ include __DIR__ . '/../includes/header.php';
                         <tr>
                             <td>
                                 <div class="d-flex align-items-start gap-2">
-                                    <?php $applicantPhoto = uploadedFileUrl($app['profile_photo'] ?? null); ?>
+                                    <?php $applicantPhoto = profileImageUrl($app['jobseeker_id'], $app['profile_photo_data'] ?? null, $app['profile_photo'] ?? null); ?>
                                     <?php if ($applicantPhoto): ?><img src="<?php echo e($applicantPhoto); ?>" class="profile-avatar-tiny" alt="<?php echo e($app['candidate_name']); ?>">
                                     <?php else: ?><span class="profile-avatar-tiny account-initial" aria-hidden="true"><?php echo e(userInitial($app['candidate_name'])); ?></span><?php endif; ?>
                                     <div><strong><?php echo e($app['candidate_name']); ?></strong><br><small class="text-muted"><?php echo e($app['candidate_email']); ?></small>
                                     <small class="d-block mt-1"><?php echo e($app['profession'] ?: 'Profession not added'); ?></small></div>
                                 </div>
                                 <div class="applicant-details mt-2"><small><strong>Education:</strong> <?php echo e(trim(($app['degree'] ?? '') . ' - ' . ($app['university'] ?? ''), ' -') ?: 'Not added'); ?></small><br><small><strong>Skills:</strong> <?php echo e($app['skills'] ?: 'Not added'); ?></small><br><small><strong>Experience:</strong> <?php echo e($app['experience'] ?: 'Not added'); ?></small></div>
-                                <?php if (!empty($app['resume_path'])): ?><a href="<?php echo e(url($app['resume_path'])); ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mt-2">View resume</a><?php endif; ?>
+                                <?php if (!empty($app['resume_data'])): ?><a href="<?php echo e(resumeUrl('application', $app['id'])); ?>" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary mt-2">View resume</a><?php endif; ?>
                             </td>
                             <td><?php echo e($app['job_title']); ?></td>
                             <td><span class="status-pill status-<?php echo e($app['status']); ?>"><?php echo e(getApplicationStatusLabel($app['status'])); ?></span></td>

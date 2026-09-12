@@ -17,7 +17,7 @@ include __DIR__ . '/../includes/header.php';
     <div class="col-lg-4">
         <div class="card p-4">
             <div class="d-flex align-items-center gap-3 mb-3">
-                <?php $dashboardPhoto = uploadedFileUrl($profile['profile_photo'] ?? null); ?>
+                <?php $dashboardPhoto = profileImageUrl($_SESSION['user_id'], $profile['profile_photo_data'] ?? null, $profile['profile_photo'] ?? null); ?>
                 <?php if ($dashboardPhoto): ?>
                     <img src="<?php echo e($dashboardPhoto); ?>" class="profile-avatar-small" alt="Profile photo">
                 <?php else: ?>

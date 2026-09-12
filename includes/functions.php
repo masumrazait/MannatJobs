@@ -100,54 +100,71 @@ function isStrongPassword($password)
     return strlen($password) >= 8 && preg_match('/[A-Z]/', $password) && preg_match('/[a-z]/', $password) && preg_match('/[0-9]/', $password) && preg_match('/[^A-Za-z0-9]/', $password);
 }
 
-function uploadFile($file, $targetDir, $allowedTypes = ['pdf', 'jpg', 'jpeg', 'png'], $maxSize = 2097152)
-{
-    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-        return ['success' => false, 'message' => 'No file uploaded or upload failed.'];
-    }
-
-    if ($file['size'] > $maxSize) {
-        return ['success' => false, 'message' => 'File exceeds the size limit.'];
-    }
-
-    $extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-    if (!in_array($extension, $allowedTypes, true)) {
-        return ['success' => false, 'message' => 'Only PDF, JPG, JPEG, and PNG files are allowed.'];
-    }
-
-    $safeName = time() . '_' . preg_replace('/[^A-Za-z0-9_.-]/', '_', basename($file['name']));
-    $destination = rtrim($targetDir, '/') . '/' . $safeName;
-
-    if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0775, true);
-    }
-
-    if (move_uploaded_file($file['tmp_name'], $destination)) {
-        return ['success' => true, 'path' => $destination];
-    }
-
-    return ['success' => false, 'message' => 'The file could not be saved.'];
-}
-
 function userInitial($name)
 {
     $name = trim((string)$name);
     return $name !== '' ? strtoupper(substr($name, 0, 1)) : '?';
 }
 
-function uploadRelativePath($absolutePath)
+function profileImageUrl($userId, $imageData = null, $legacyPath = null)
 {
-    return str_replace('\\', '/', str_replace(__DIR__ . '/../', '', $absolutePath));
-}
-
-function uploadedFileUrl($relativePath)
-{
-    if (!$relativePath) {
-        return null;
+    if (!empty($imageData)) {
+        return url('profile-image.php?id=' . (int)$userId);
     }
 
-    $absolutePath = __DIR__ . '/../' . ltrim(str_replace('\\', '/', $relativePath), '/');
-    return is_file($absolutePath) ? url($relativePath) : null;
+    return null;
+}
+
+function readUploadedProfileImage($file)
+{
+    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'message' => 'No profile image uploaded or upload failed.'];
+    }
+
+    if ($file['size'] > 2 * 1024 * 1024 || !is_uploaded_file($file['tmp_name'])) {
+        return ['success' => false, 'message' => 'Profile image must be smaller than 2 MB.'];
+    }
+
+    $imageInfo = @getimagesize($file['tmp_name']);
+    $allowedMimes = ['image/jpeg', 'image/png'];
+    if (!$imageInfo || !in_array($imageInfo['mime'], $allowedMimes, true)) {
+        return ['success' => false, 'message' => 'Only JPG and PNG profile images are allowed.'];
+    }
+
+    $data = file_get_contents($file['tmp_name']);
+    if ($data === false) {
+        return ['success' => false, 'message' => 'The profile image could not be read.'];
+    }
+
+    return ['success' => true, 'data' => $data, 'mime' => $imageInfo['mime']];
+}
+
+function readUploadedResume($file)
+{
+    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'message' => 'No resume uploaded or upload failed.'];
+    }
+
+    if ($file['size'] > 2 * 1024 * 1024 || !is_uploaded_file($file['tmp_name'])) {
+        return ['success' => false, 'message' => 'Resume must be smaller than 2 MB.'];
+    }
+
+    $mime = function_exists('mime_content_type') ? mime_content_type($file['tmp_name']) : $file['type'];
+    if ($mime !== 'application/pdf' || strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'pdf') {
+        return ['success' => false, 'message' => 'Only PDF resumes are allowed.'];
+    }
+
+    $data = file_get_contents($file['tmp_name']);
+    if ($data === false) {
+        return ['success' => false, 'message' => 'The resume could not be read.'];
+    }
+
+    return ['success' => true, 'data' => $data, 'mime' => 'application/pdf'];
+}
+
+function resumeUrl($ownerType, $id)
+{
+    return url('resume-file.php?type=' . rawurlencode($ownerType) . '&id=' . (int)$id);
 }
 
 function getUserNameById($conn, $id)

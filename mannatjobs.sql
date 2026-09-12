@@ -26,6 +26,8 @@ CREATE TABLE users (
 CREATE TABLE jobseeker_profiles (
     user_id INT UNSIGNED NOT NULL PRIMARY KEY,
     resume_path VARCHAR(255) DEFAULT NULL,
+    resume_data MEDIUMBLOB DEFAULT NULL,
+    resume_mime VARCHAR(100) DEFAULT NULL,
     skills TEXT DEFAULT NULL,
     experience TEXT DEFAULT NULL,
     education TEXT DEFAULT NULL,
@@ -39,6 +41,8 @@ CREATE TABLE jobseeker_profiles (
     state VARCHAR(120) DEFAULT NULL,
     city VARCHAR(120) DEFAULT NULL,
     profile_photo VARCHAR(255) DEFAULT NULL,
+    profile_photo_data MEDIUMBLOB DEFAULT NULL,
+    profile_photo_mime VARCHAR(100) DEFAULT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_jobseeker_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -89,6 +93,8 @@ CREATE TABLE applications (
     job_id INT UNSIGNED NOT NULL,
     jobseeker_id INT UNSIGNED NOT NULL,
     resume_path VARCHAR(255) DEFAULT NULL,
+    resume_data MEDIUMBLOB DEFAULT NULL,
+    resume_mime VARCHAR(100) DEFAULT NULL,
     cover_letter TEXT DEFAULT NULL,
     status ENUM('applied', 'shortlisted', 'rejected', 'hired') NOT NULL DEFAULT 'applied',
     applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

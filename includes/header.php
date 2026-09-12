@@ -12,11 +12,11 @@ $loggedIn = isLoggedIn();
 $avatarUrl = null;
 $accountCount = 0;
 if ($loggedIn && $role === 'jobseeker') {
-    $avatarStmt = $conn->prepare('SELECT profile_photo FROM jobseeker_profiles WHERE user_id = ? LIMIT 1');
+    $avatarStmt = $conn->prepare('SELECT profile_photo, profile_photo_data FROM jobseeker_profiles WHERE user_id = ? LIMIT 1');
     $avatarStmt->bind_param('i', $_SESSION['user_id']);
     $avatarStmt->execute();
     $avatar = $avatarStmt->get_result()->fetch_assoc();
-    $avatarUrl = uploadedFileUrl($avatar['profile_photo'] ?? null);
+    $avatarUrl = profileImageUrl($_SESSION['user_id'], $avatar['profile_photo_data'] ?? null, $avatar['profile_photo'] ?? null);
     $countStmt = $conn->prepare('SELECT COUNT(*) AS total FROM applications WHERE jobseeker_id = ?');
     $countStmt->bind_param('i', $_SESSION['user_id']);
     $countStmt->execute();
@@ -66,7 +66,7 @@ if ($loggedIn && $role === 'jobseeker') {
                         <button class="account-menu-button" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav" aria-label="Open navigation">
                             <span></span><span></span><span></span>
                         </button>
-                        <a href="<?php echo $dashboardPath; ?>" class="account-link" aria-label="Open <?php echo e($user); ?> profile">
+                        <a href="<?php echo $dashboardPath; ?>" class="account-link" aria-label="Open <?php echo e($user); ?> profile" title="<?php echo e($user); ?>" data-user-name="<?php echo e($user); ?>">
                             <span class="account-avatar-wrap">
                                 <?php if ($avatarUrl): ?>
                                     <img src="<?php echo e($avatarUrl); ?>" class="account-avatar" alt="<?php echo e($user); ?>">
@@ -75,7 +75,6 @@ if ($loggedIn && $role === 'jobseeker') {
                                 <?php endif; ?>
                                 <?php if ($accountCount > 0): ?><span class="account-badge"><?php echo $accountCount > 99 ? '99+' : (int)$accountCount; ?></span><?php endif; ?>
                             </span>
-                            <span class="account-name d-none d-sm-inline"><?php echo e($user); ?></span>
                         </a>
                     </div>
                     <a href="<?php echo $dashboardPath; ?>" class="btn btn-light btn-sm">Dashboard</a>

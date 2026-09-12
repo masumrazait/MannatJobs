@@ -21,29 +21,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $state = sanitize($_POST['state'] ?? '');
     $city = sanitize($_POST['city'] ?? '');
     $resumePath = $profile['resume_path'] ?? null;
+    $resumeData = $profile['resume_data'] ?? null;
+    $resumeMime = $profile['resume_mime'] ?? null;
     $profilePhoto = $profile['profile_photo'] ?? null;
+    $profileImage = null;
 
     if (isset($_FILES['resume']) && $_FILES['resume']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $upload = uploadFile($_FILES['resume'], __DIR__ . '/../uploads/resumes', ['pdf'], 2 * 1024 * 1024);
+        $upload = readUploadedResume($_FILES['resume']);
         if (!$upload['success']) {
             setFlash('danger', $upload['message']);
             redirect('jobseeker/profile.php');
         }
-        $resumePath = uploadRelativePath($upload['path']);
+        $resumePath = null;
+        $resumeData = $upload['data'];
+        $resumeMime = $upload['mime'];
     }
 
     if (isset($_FILES['profile_photo']) && $_FILES['profile_photo']['error'] !== UPLOAD_ERR_NO_FILE) {
-        $upload = uploadFile($_FILES['profile_photo'], __DIR__ . '/../uploads/profile_photos', ['jpg', 'jpeg', 'png'], 2 * 1024 * 1024);
+        $upload = readUploadedProfileImage($_FILES['profile_photo']);
         if (!$upload['success']) {
             setFlash('danger', $upload['message']);
             redirect('jobseeker/profile.php');
         }
-        $profilePhoto = uploadRelativePath($upload['path']);
+        $profilePhoto = null;
+        $profileImage = $upload;
     }
 
     $stmt = $conn->prepare('UPDATE jobseeker_profiles SET resume_path = ?, profile_photo = ?, skills = ?, experience = ?, education = ?, degree = ?, university = ?, stream = ?, profession = ?, projects = ?, company = ?, address = ?, state = ?, city = ? WHERE user_id = ?');
     $stmt->bind_param('ssssssssssssssi', $resumePath, $profilePhoto, $skills, $experience, $education, $degree, $university, $stream, $profession, $projects, $company, $address, $state, $city, $userId);
     if ($stmt->execute()) {
+        if ($profileImage) {
+            $imageStmt = $conn->prepare('UPDATE jobseeker_profiles SET profile_photo_data = ?, profile_photo_mime = ? WHERE user_id = ?');
+            $imageData = $profileImage['data'];
+            $imageMime = $profileImage['mime'];
+            $imageStmt->bind_param('bsi', $imageData, $imageMime, $userId);
+            $imageStmt->send_long_data(0, $imageData);
+            if (!$imageStmt->execute()) {
+                setFlash('danger', 'Profile image could not be saved. Please try again.');
+                redirect('jobseeker/profile.php');
+            }
+        }
+        if ($resumeData !== null) {
+            $resumeStmt = $conn->prepare('UPDATE jobseeker_profiles SET resume_data = ?, resume_mime = ? WHERE user_id = ?');
+            $resumeStmt->bind_param('bsi', $resumeData, $resumeMime, $userId);
+            $resumeStmt->send_long_data(0, $resumeData);
+            if (!$resumeStmt->execute()) {
+                setFlash('danger', 'Resume could not be saved. Please try again.');
+                redirect('jobseeker/profile.php');
+            }
+        }
         setFlash('success', 'Profile updated successfully.');
         redirect('jobseeker/profile.php');
     }
@@ -61,7 +87,7 @@ include __DIR__ . '/../includes/header.php';
         <h1 class="fw-bold mb-1">Make your next application count</h1>
         <p class="text-muted mb-0">Keep one complete profile ready to reuse across every job application.</p>
     </div>
-    <?php $profilePhotoUrl = uploadedFileUrl($profile['profile_photo'] ?? null); ?>
+    <?php $profilePhotoUrl = profileImageUrl($_SESSION['user_id'], $profile['profile_photo_data'] ?? null, $profile['profile_photo'] ?? null); ?>
     <?php if ($profilePhotoUrl): ?>
         <img src="<?php echo e($profilePhotoUrl); ?>" class="profile-avatar-large" alt="Profile photo">
     <?php else: ?>
@@ -81,7 +107,7 @@ include __DIR__ . '/../includes/header.php';
             <div class="col-md-6">
                 <label class="form-label">Resume <span class="text-muted fw-normal">(PDF, max 2 MB)</span></label>
                 <input type="file" class="form-control" name="resume" accept="application/pdf">
-                <?php if (!empty($profile['resume_path'])): ?><small class="text-success d-block mt-2">Resume saved and ready to reuse.</small><?php endif; ?>
+                <?php if (!empty($profile['resume_data'])): ?><small class="text-success d-block mt-2">Resume saved and ready to reuse.</small><?php endif; ?>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Profession</label>
@@ -138,7 +164,7 @@ include __DIR__ . '/../includes/header.php';
                 <textarea class="form-control" rows="5" name="address" placeholder="Street or area"><?php echo e($profile['address'] ?? ''); ?></textarea>
             </div>
         </div>
-    </form>
+    </div>
 
     <div class="card p-4 mb-4">
         <h3 class="fw-bold mb-1">Location</h3>
@@ -149,5 +175,6 @@ include __DIR__ . '/../includes/header.php';
     </div>
     <button type="submit" class="btn btn-primary btn-lg">Save profile</button>
 </div>
+</form>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

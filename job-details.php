@@ -9,11 +9,20 @@ if ($id <= 0) {
     redirect('jobs.php');
 }
 
-$stmt = $conn->prepare('SELECT j.*, c.name AS category_name, u.name AS employer_name, ep.company_name, ep.company_logo, ep.company_website, ep.company_description FROM jobs j INNER JOIN job_categories c ON c.id = j.category_id INNER JOIN users u ON u.id = j.employer_id LEFT JOIN employer_profiles ep ON ep.user_id = u.id WHERE j.id = ? AND j.status = ? LIMIT 1');
-$status = 'approved';
-$stmt->bind_param('is', $id, $status);
+$stmt = $conn->prepare('SELECT j.*, c.name AS category_name, u.name AS employer_name, ep.company_name, ep.company_logo, ep.company_website, ep.company_description FROM jobs j INNER JOIN job_categories c ON c.id = j.category_id INNER JOIN users u ON u.id = j.employer_id LEFT JOIN employer_profiles ep ON ep.user_id = u.id WHERE j.id = ? LIMIT 1');
+$stmt->bind_param('i', $id);
 $stmt->execute();
 $job = $stmt->get_result()->fetch_assoc();
+
+if ($job && $job['status'] !== 'approved') {
+    $canViewPrivateJob = isLoggedIn() && (
+        $_SESSION['user_role'] === 'admin' ||
+        ($_SESSION['user_role'] === 'employer' && (int)$_SESSION['user_id'] === (int)$job['employer_id'])
+    );
+    if (!$canViewPrivateJob) {
+        $job = null;
+    }
+}
 
 if (!$job) {
     header('HTTP/1.0 404 Not Found');
@@ -35,6 +44,12 @@ include __DIR__ . '/includes/header.php';
                 </div>
                 <span class="job-badge bg-primary text-white"><?php echo e($job['job_type']); ?></span>
             </div>
+
+            <?php if ($job['status'] !== 'approved'): ?>
+                <div class="alert alert-warning" role="status">
+                    This listing is currently <?php echo e($job['status']); ?> and is not visible to public job seekers.
+                </div>
+            <?php endif; ?>
 
             <div class="mb-4">
                 <h5 class="fw-bold">Job Overview</h5>

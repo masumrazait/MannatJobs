@@ -76,15 +76,42 @@ h6 {
 }
 
 .account-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
     color: #fff;
     text-decoration: none;
     font-size: 0.85rem;
 }
 
 .account-link:hover { color: var(--mint); }
+
+.account-link::after {
+    content: attr(data-user-name);
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    z-index: 20;
+    width: max-content;
+    max-width: 220px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: #14213d;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.account-link:hover::after,
+.account-link:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
+}
 
 .account-shell {
     display: inline-flex;
@@ -485,13 +512,6 @@ h6 {
         height: 68px;
         border-radius: 16px;
         font-size: 1.5rem;
-    }
-
-    .account-name {
-        max-width: 110px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
     }
 
     .account-shell {
