@@ -58,6 +58,29 @@ CREATE TABLE employer_profiles (
     CONSTRAINT fk_employer_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE employer_job_quotas (
+    employer_id INT UNSIGNED PRIMARY KEY,
+    post_limit INT UNSIGNED NOT NULL DEFAULT 30,
+    posts_used INT UNSIGNED NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_quota_employer FOREIGN KEY (employer_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE job_post_quota_requests (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    employer_id INT UNSIGNED NOT NULL,
+    requested_posts INT UNSIGNED NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    admin_id INT UNSIGNED DEFAULT NULL,
+    admin_note VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL DEFAULT NULL,
+    CONSTRAINT fk_quota_request_employer FOREIGN KEY (employer_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_quota_request_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_quota_requests_status (status),
+    INDEX idx_quota_requests_employer (employer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE job_categories (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,

@@ -213,3 +213,29 @@ function getApplicationStatusLabel($status)
 
     return $labels[$status] ?? ucfirst($status);
 }
+
+function ensureEmployerQuota($conn, $employerId)
+{
+    $stmt = $conn->prepare('INSERT IGNORE INTO employer_job_quotas (employer_id, post_limit, posts_used) VALUES (?, 30, 0)');
+    $stmt->bind_param('i', $employerId);
+    $stmt->execute();
+
+    $stmt = $conn->prepare('SELECT post_limit, posts_used FROM employer_job_quotas WHERE employer_id = ? LIMIT 1');
+    $stmt->bind_param('i', $employerId);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc() ?: ['post_limit' => 30, 'posts_used' => 0];
+}
+
+function getEmployerQuota($conn, $employerId)
+{
+    $quota = ensureEmployerQuota($conn, $employerId);
+    $stmt = $conn->prepare('SELECT COUNT(*) AS total FROM jobs WHERE employer_id = ?');
+    $stmt->bind_param('i', $employerId);
+    $stmt->execute();
+    $used = (int)($stmt->get_result()->fetch_assoc()['total'] ?? 0);
+    $update = $conn->prepare('UPDATE employer_job_quotas SET posts_used = ? WHERE employer_id = ?');
+    $update->bind_param('ii', $used, $employerId);
+    $update->execute();
+    $quota['posts_used'] = $used;
+    return $quota;
+}

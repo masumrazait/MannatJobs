@@ -12,6 +12,32 @@ if ($conn->connect_error) {
 
 $conn->set_charset('utf8mb4');
 
+$conn->query("CREATE TABLE IF NOT EXISTS employer_job_quotas (
+    employer_id INT UNSIGNED PRIMARY KEY,
+    post_limit INT UNSIGNED NOT NULL DEFAULT 30,
+    posts_used INT UNSIGNED NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_runtime_quota_employer FOREIGN KEY (employer_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+$conn->query("CREATE TABLE IF NOT EXISTS job_post_quota_requests (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    employer_id INT UNSIGNED NOT NULL,
+    requested_posts INT UNSIGNED NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
+    admin_id INT UNSIGNED DEFAULT NULL,
+    admin_note VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP NULL DEFAULT NULL,
+    CONSTRAINT fk_runtime_request_employer FOREIGN KEY (employer_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_runtime_request_admin FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE SET NULL,
+    INDEX idx_runtime_quota_status (status),
+    INDEX idx_runtime_quota_employer (employer_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+$conn->query("INSERT INTO employer_job_quotas (employer_id, post_limit, posts_used)
+    SELECT u.id, 30, (SELECT COUNT(*) FROM jobs j WHERE j.employer_id = u.id)
+    FROM users u WHERE u.role = 'employer'
+    ON DUPLICATE KEY UPDATE posts_used = VALUES(posts_used)");
+
 // Keep existing installations compatible with the expanded job seeker profile.
 $profileColumns = [
     'resume_data' => 'MEDIUMBLOB DEFAULT NULL',

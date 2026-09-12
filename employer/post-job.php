@@ -4,6 +4,12 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 requireRole('employer');
 
+$quota = getEmployerQuota($conn, (int)$_SESSION['user_id']);
+if ((int)$quota['posts_used'] >= (int)$quota['post_limit']) {
+    setFlash('warning', 'Your job posting limit is complete. Request more posts from the admin.');
+    redirect('employer/index.php');
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $title = sanitize($_POST['title'] ?? '');
     $description = sanitize($_POST['description'] ?? '');
@@ -30,14 +36,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (($salaryMin !== null && $salaryMin < 0) || ($salaryMax !== null && $salaryMax < 0) || ($salaryMin !== null && $salaryMax !== null && $salaryMax < $salaryMin)) {
         setFlash('danger', 'Please enter a valid salary range.');
     } else {
+        $conn->begin_transaction();
+        $quotaStmt = $conn->prepare('SELECT post_limit, posts_used FROM employer_job_quotas WHERE employer_id = ? FOR UPDATE');
+        $quotaStmt->bind_param('i', $_SESSION['user_id']);
+        $quotaStmt->execute();
+        $lockedQuota = $quotaStmt->get_result()->fetch_assoc();
+        if (!$lockedQuota || (int)$lockedQuota['posts_used'] >= (int)$lockedQuota['post_limit']) {
+            $conn->rollback();
+            setFlash('warning', 'Your job posting limit is complete. Request more posts from the admin.');
+            redirect('employer/index.php');
+        }
         $stmt = $conn->prepare('INSERT INTO jobs (employer_id, category_id, title, description, requirements, location, job_type, salary_min, salary_max, experience_level, deadline, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $status = 'pending';
         $stmt->bind_param('iisssssddsss', $_SESSION['user_id'], $categoryId, $title, $description, $requirements, $location, $jobType, $salaryMin, $salaryMax, $experienceLevel, $deadline, $status);
 
         if ($stmt->execute()) {
+            $newUsed = (int)$lockedQuota['posts_used'] + 1;
+            $updateQuota = $conn->prepare('UPDATE employer_job_quotas SET posts_used = ? WHERE employer_id = ?');
+            $updateQuota->bind_param('ii', $newUsed, $_SESSION['user_id']);
+            $updateQuota->execute();
+            $conn->commit();
             setFlash('success', 'Your job has been posted and is pending admin approval.');
             redirect('employer/jobs.php');
         } else {
+            $conn->rollback();
             error_log('Job posting failed: ' . $stmt->error);
             setFlash('danger', 'Job posting failed. Please try again.');
         }

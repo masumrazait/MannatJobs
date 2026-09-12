@@ -43,6 +43,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $ins = $conn->prepare('INSERT INTO employer_profiles (user_id) VALUES (?)');
                     $ins->bind_param('i', $userId);
                     $ins->execute();
+                    $quota = $conn->prepare('INSERT INTO employer_job_quotas (employer_id, post_limit, posts_used) VALUES (?, 30, 0)');
+                    $quota->bind_param('i', $userId);
+                    $quota->execute();
                 }
 
                 setFlash('success', $role === 'employer' ? 'Employer account created successfully. It is pending admin approval.' : 'Registration successful. You can now log in.');

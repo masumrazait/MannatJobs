@@ -10,6 +10,8 @@ $jobs = $conn->query('SELECT * FROM jobs WHERE employer_id = ' . (int)$_SESSION[
 $totalJobs = $conn->query('SELECT COUNT(*) AS total FROM jobs WHERE employer_id = ' . (int)$_SESSION['user_id'])->fetch_assoc()['total'];
 $totalApplicants = $conn->query('SELECT COUNT(*) AS total FROM applications a INNER JOIN jobs j ON j.id = a.job_id WHERE j.employer_id = ' . (int)$_SESSION['user_id'])->fetch_assoc()['total'];
 $pendingJobs = $conn->query('SELECT COUNT(*) AS total FROM jobs WHERE employer_id = ' . (int)$_SESSION['user_id'] . ' AND status = "pending"')->fetch_assoc()['total'];
+$quota = getEmployerQuota($conn, (int)$_SESSION['user_id']);
+$remainingPosts = max(0, (int)$quota['post_limit'] - (int)$quota['posts_used']);
 
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -32,6 +34,17 @@ include __DIR__ . '/../includes/header.php';
             <h3><?php echo (int)$pendingJobs; ?></h3>
             <p class="mb-0 text-muted">Pending Review</p>
         </div>
+    </div>
+</div>
+
+<div class="card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h4 class="fw-bold mb-1">Job posting access</h4>
+            <p class="text-muted mb-0"><?php echo (int)$quota['posts_used']; ?> of <?php echo (int)$quota['post_limit']; ?> posts used. <?php echo $remainingPosts; ?> remaining.</p>
+        </div>
+        <?php if ($remainingPosts > 0): ?><a href="<?php echo e(url('employer/post-job.php')); ?>" class="btn btn-primary">Post Job</a><?php endif; ?>
+        <a href="<?php echo e(url('employer/quota-request.php')); ?>" class="btn btn-outline-primary">Manage Quota</a>
     </div>
 </div>
 
