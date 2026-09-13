@@ -1,6 +1,10 @@
 CREATE DATABASE IF NOT EXISTS mannatjobs CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE mannatjobs;
 
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS job_post_quota_requests;
+DROP TABLE IF EXISTS employer_job_quotas;
 DROP TABLE IF EXISTS contact_messages;
 DROP TABLE IF EXISTS saved_jobs;
 DROP TABLE IF EXISTS applications;
@@ -9,6 +13,8 @@ DROP TABLE IF EXISTS employer_profiles;
 DROP TABLE IF EXISTS jobseeker_profiles;
 DROP TABLE IF EXISTS job_categories;
 DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 CREATE TABLE users (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -158,7 +164,7 @@ INSERT INTO job_categories (name) VALUES
 ('Customer Support');
 
 INSERT INTO users (name, email, password, role, phone, status, created_at) VALUES
-('System Administrator', 'admin@mannatjobs.com', '$2y$12$s2wVFCNcMkwDjzKSOyAT4uJ9BEuz4anIkv1LlEi1YXqsqzUuWo3p.', 'admin', '+923001112233', 'active', NOW()),
+('System Administrator', 'admin@mannatjobs.com', '$2y$12$.OCbhLQM4iYrXXNHuKmmi.f.UwZa1K6SaergL40Irlbg8FKUqw7jq', 'admin', '+923001112233', 'active', NOW()),
 ('Aisha Khan', 'employer@mannatjobs.com', '$2y$12$R1/e46I1P/HcTSivfFlwx.DnY48Aw4UZCtuJFz/sjySa2FuhyvNZa', 'employer', '+923001234567', 'active', NOW()),
 ('Zain Ali', 'jobseeker@mannatjobs.com', '$2y$12$9kRWt.8Eua3vZ7LPelhyZuhbkPHk3o9jqzv91rynVQ8Z8J/I12Vbu', 'jobseeker', '+923005556677', 'active', NOW());
 

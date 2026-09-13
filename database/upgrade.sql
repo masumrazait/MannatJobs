@@ -1,7 +1,6 @@
 -- MannatJobs non-destructive database upgrade
 -- Use this file for an existing installation. It does not drop or delete data.
 
-CREATE DATABASE IF NOT EXISTS mannatjobs CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE mannatjobs;
 
 CREATE TABLE IF NOT EXISTS users (
