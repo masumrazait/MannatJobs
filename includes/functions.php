@@ -132,6 +132,19 @@ function profileImageUrl($userId, $imageData = null, $legacyPath = null)
     return null;
 }
 
+function companyLogoUrl($userId, $imageData = null, $legacyPath = null)
+{
+    if (!empty($imageData)) {
+        return url('company-logo.php?id=' . (int)$userId);
+    }
+
+    if (!empty($legacyPath)) {
+        return url(ltrim($legacyPath, '/'));
+    }
+
+    return null;
+}
+
 function readUploadedProfileImage($file)
 {
     if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {

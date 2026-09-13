@@ -9,7 +9,7 @@ if ($id <= 0) {
     redirect('jobs.php');
 }
 
-$stmt = $conn->prepare('SELECT j.*, c.name AS category_name, u.name AS employer_name, ep.company_name, ep.company_logo, ep.company_website, ep.company_description FROM jobs j INNER JOIN job_categories c ON c.id = j.category_id INNER JOIN users u ON u.id = j.employer_id LEFT JOIN employer_profiles ep ON ep.user_id = u.id WHERE j.id = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT j.*, c.name AS category_name, u.name AS employer_name, ep.company_name, ep.company_logo, ep.company_logo_data, ep.company_website, ep.company_description FROM jobs j INNER JOIN job_categories c ON c.id = j.category_id INNER JOIN users u ON u.id = j.employer_id LEFT JOIN employer_profiles ep ON ep.user_id = u.id WHERE j.id = ? LIMIT 1');
 $stmt->bind_param('i', $id);
 $stmt->execute();
 $job = $stmt->get_result()->fetch_assoc();
@@ -82,7 +82,8 @@ include __DIR__ . '/includes/header.php';
         <div class="card p-4">
             <h4 class="fw-bold mb-3">Company Details</h4>
             <div class="d-flex align-items-center gap-3 mb-3">
-                <img src="<?php echo e(url('assets/images/logo-placeholder.svg')); ?>" alt="Company logo" class="company-logo">
+                <?php $companyLogo = companyLogoUrl($job['employer_id'], $job['company_logo_data'] ?? null, $job['company_logo'] ?? null); ?>
+                <?php if ($companyLogo): ?><img src="<?php echo e($companyLogo); ?>" alt="Company logo" class="company-logo"><?php else: ?><span class="company-logo account-initial" aria-hidden="true"><?php echo e(userInitial($job['company_name'] ?: $job['employer_name'])); ?></span><?php endif; ?>
                 <div>
                     <h5 class="mb-1"><?php echo e($job['company_name'] ?: $job['employer_name']); ?></h5>
                     <small class="text-muted"><?php echo e($job['location']); ?></small>

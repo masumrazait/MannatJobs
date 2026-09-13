@@ -57,6 +57,8 @@ CREATE TABLE employer_profiles (
     user_id INT UNSIGNED NOT NULL PRIMARY KEY,
     company_name VARCHAR(180) DEFAULT NULL,
     company_logo VARCHAR(255) DEFAULT NULL,
+    company_logo_data MEDIUMBLOB DEFAULT NULL,
+    company_logo_mime VARCHAR(100) DEFAULT NULL,
     company_website VARCHAR(255) DEFAULT NULL,
     company_description TEXT DEFAULT NULL,
     approved TINYINT(1) NOT NULL DEFAULT 0,
@@ -164,7 +166,7 @@ INSERT INTO job_categories (name) VALUES
 ('Customer Support');
 
 INSERT INTO users (name, email, password, role, phone, status, created_at) VALUES
-('System Administrator', 'admin@mannatjobs.com', '$2y$12$.OCbhLQM4iYrXXNHuKmmi.f.UwZa1K6SaergL40Irlbg8FKUqw7jq', 'admin', '+923001112233', 'active', NOW()),
+('System Administrator', 'admin@mannatjobs.com', '$2y$12$qYTXsBXriafbJiKtUZjVbuKgcjDreY9ctaAxwCvcUzKuaG.jTixJu', 'admin', '+923001112233', 'active', NOW()),
 ('Aisha Khan', 'employer@mannatjobs.com', '$2y$12$R1/e46I1P/HcTSivfFlwx.DnY48Aw4UZCtuJFz/sjySa2FuhyvNZa', 'employer', '+923001234567', 'active', NOW()),
 ('Zain Ali', 'jobseeker@mannatjobs.com', '$2y$12$9kRWt.8Eua3vZ7LPelhyZuhbkPHk3o9jqzv91rynVQ8Z8J/I12Vbu', 'jobseeker', '+923005556677', 'active', NOW());
 

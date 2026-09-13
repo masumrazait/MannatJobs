@@ -38,6 +38,24 @@ $conn->query("INSERT INTO employer_job_quotas (employer_id, post_limit, posts_us
     FROM users u WHERE u.role = 'employer'
     ON DUPLICATE KEY UPDATE posts_used = VALUES(posts_used)");
 
+$employerProfileColumns = [
+    'company_logo_data' => 'MEDIUMBLOB DEFAULT NULL',
+    'company_logo_mime' => 'VARCHAR(100) DEFAULT NULL',
+];
+$employerColumnsResult = $conn->query("SHOW COLUMNS FROM employer_profiles");
+$existingEmployerColumns = [];
+if ($employerColumnsResult) {
+    while ($column = $employerColumnsResult->fetch_assoc()) {
+        $existingEmployerColumns[$column['Field']] = true;
+    }
+}
+
+foreach ($employerProfileColumns as $columnName => $definition) {
+    if (!isset($existingEmployerColumns[$columnName])) {
+        $conn->query("ALTER TABLE employer_profiles ADD COLUMN `" . $conn->real_escape_string($columnName) . "` " . $definition);
+    }
+}
+
 // Keep existing installations compatible with the expanded job seeker profile.
 $profileColumns = [
     'resume_data' => 'MEDIUMBLOB DEFAULT NULL',

@@ -47,6 +47,7 @@ include __DIR__ . '/../includes/header.php';
                             <td>
                                 <div class="d-flex gap-2">
                                     <a href="<?php echo e(url('job-details.php?id=' . (int)$job['id'])); ?>" class="btn btn-sm btn-outline-primary">View</a>
+                                    <a href="<?php echo e(url('employer/edit-job.php?id=' . (int)$job['id'])); ?>" class="btn btn-sm btn-outline-primary">Edit</a>
                                     <form method="POST" action="<?php echo e(url('employer/jobs.php')); ?>" onsubmit="return confirm('Delete this job?');">
                                         <input type="hidden" name="delete_id" value="<?php echo (int)$job['id']; ?>">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>

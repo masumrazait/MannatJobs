@@ -48,6 +48,16 @@ include __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<div class="card p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div>
+            <h4 class="fw-bold mb-1">Company profile</h4>
+            <p class="text-muted mb-0">Update your company logo, description, and website.</p>
+        </div>
+        <a href="<?php echo e(url('employer/profile.php')); ?>" class="btn btn-outline-primary">Manage Company Profile</a>
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-6">
         <div class="card p-4">

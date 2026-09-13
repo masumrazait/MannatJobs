@@ -90,7 +90,7 @@ include __DIR__ . '/../includes/header.php';
             </div>
             <div class="col-md-6">
                 <label class="form-label">Location</label>
-                <input type="text" class="form-control" name="location" placeholder="e.g. Lahore, Islamabad, or Remote" required>
+                <input type="text" class="form-control" name="location" placeholder="e.g. Bangalore, Chennai, or Remote" required>
             </div>
             <div class="col-md-6">
                 <label class="form-label">Job Type</label>
