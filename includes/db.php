@@ -64,6 +64,7 @@ $profileColumns = [
     'university' => 'VARCHAR(180) DEFAULT NULL',
     'stream' => 'VARCHAR(150) DEFAULT NULL',
     'profession' => 'VARCHAR(150) DEFAULT NULL',
+    'notice_period' => 'VARCHAR(30) DEFAULT NULL',
     'projects' => 'TEXT DEFAULT NULL',
     'company' => 'VARCHAR(180) DEFAULT NULL',
     'state' => 'VARCHAR(120) DEFAULT NULL',
@@ -101,6 +102,19 @@ if ($applicationColumnsResult) {
 foreach ($applicationColumns as $columnName => $definition) {
     if (!isset($existingApplicationColumns[$columnName])) {
         $conn->query("ALTER TABLE applications ADD COLUMN `" . $conn->real_escape_string($columnName) . "` " . $definition);
+    }
+}
+
+$runtimeIndexes = [
+    ['users', 'idx_users_name', 'name'],
+    ['users', 'idx_users_email', 'email'],
+    ['jobs', 'idx_jobs_title', 'title'],
+    ['applications', 'idx_applications_applied_at', 'applied_at'],
+];
+foreach ($runtimeIndexes as [$table, $indexName, $columnName]) {
+    $indexCheck = $conn->query("SHOW INDEX FROM `" . $conn->real_escape_string($table) . "` WHERE Key_name = '" . $conn->real_escape_string($indexName) . "'");
+    if ($indexCheck && $indexCheck->num_rows === 0) {
+        $conn->query("CREATE INDEX `" . $conn->real_escape_string($indexName) . "` ON `" . $conn->real_escape_string($table) . "` (`" . $conn->real_escape_string($columnName) . "`)");
     }
 }
 

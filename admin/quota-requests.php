@@ -35,7 +35,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/quota-requests.php');
 }
 
-$requests = $conn->query("SELECT r.*, u.name AS employer_name, u.email, ep.company_name, q.post_limit, q.posts_used FROM job_post_quota_requests r INNER JOIN users u ON u.id = r.employer_id LEFT JOIN employer_profiles ep ON ep.user_id = u.id LEFT JOIN employer_job_quotas q ON q.employer_id = r.employer_id ORDER BY r.status = 'pending' DESC, r.created_at DESC");
+$filters = ['employer' => sanitize($_GET['employer'] ?? ''), 'usage' => (int)($_GET['usage'] ?? 0), 'request_posts' => (int)($_GET['request_posts'] ?? 0), 'status_filter' => sanitize($_GET['status_filter'] ?? '')];
+$where = [];
+$types = '';
+$params = [];
+if ($filters['employer'] !== '') { $where[] = '(u.name LIKE ? OR u.email LIKE ? OR ep.company_name LIKE ?)'; $types .= 'sss'; $params[] = '%' . $filters['employer'] . '%'; $params[] = '%' . $filters['employer'] . '%'; $params[] = '%' . $filters['employer'] . '%'; }
+if ($filters['usage'] > 0) { $where[] = 'q.posts_used = ?'; $types .= 'i'; $params[] = $filters['usage']; }
+if (in_array($filters['request_posts'], [30, 50, 100], true)) { $where[] = 'r.requested_posts = ?'; $types .= 'i'; $params[] = $filters['request_posts']; }
+if (in_array($filters['status_filter'], ['pending', 'approved', 'rejected'], true)) { $where[] = 'r.status = ?'; $types .= 's'; $params[] = $filters['status_filter']; }
+$whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+$baseSql = ' FROM job_post_quota_requests r INNER JOIN users u ON u.id = r.employer_id LEFT JOIN employer_profiles ep ON ep.user_id = u.id LEFT JOIN employer_job_quotas q ON q.employer_id = r.employer_id';
+$totalRow = preparedQuery($conn, 'SELECT COUNT(*) AS total' . $baseSql . $whereSql, $types, $params)->fetch_assoc();
+$pagination = paginationData($totalRow['total'] ?? 0, (int)($_GET['page'] ?? 1));
+$requests = preparedQuery($conn, 'SELECT r.*, u.name AS employer_name, u.email, ep.company_name, q.post_limit, q.posts_used' . $baseSql . $whereSql . " ORDER BY r.status = 'pending' DESC, r.created_at DESC LIMIT ? OFFSET ?", $types . 'ii', array_merge($params, [$pagination['per_page'], $pagination['offset']]));
 $pageTitle = 'Job Post Permissions';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -45,6 +57,13 @@ include __DIR__ . '/../includes/header.php';
         <div><h3 class="fw-bold mb-1">Employer Job Permissions</h3><p class="text-muted mb-0">Approve 30, 50, or 100 additional job posts per request.</p></div>
         <a href="<?php echo e(url('admin/index.php')); ?>" class="btn btn-outline-primary btn-sm">Back to Dashboard</a>
     </div>
+    <form method="GET" class="row g-2 mb-4">
+        <div class="col-md-5"><input class="form-control" name="employer" placeholder="Employer name, email, or company" value="<?php echo e($filters['employer']); ?>"></div>
+        <div class="col-md-2"><input class="form-control" type="number" min="0" name="usage" placeholder="Current usage" value="<?php echo $filters['usage'] ?: ''; ?>"></div>
+        <div class="col-md-2"><select class="form-select" name="request_posts"><option value="0">All requests</option><?php foreach ([30, 50, 100] as $requestPosts): ?><option value="<?php echo $requestPosts; ?>" <?php echo $filters['request_posts'] === $requestPosts ? 'selected' : ''; ?>>+<?php echo $requestPosts; ?></option><?php endforeach; ?></select></div>
+        <div class="col-md-2"><select class="form-select" name="status_filter"><option value="">All statuses</option><?php foreach (['pending', 'approved', 'rejected'] as $status): ?><option value="<?php echo $status; ?>" <?php echo $filters['status_filter'] === $status ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option><?php endforeach; ?></select></div>
+        <div class="col-md-3 d-flex gap-2"><button class="btn btn-primary" type="submit">Search</button><a class="btn btn-outline-primary" href="<?php echo e(url('admin/quota-requests.php')); ?>">Clear</a></div>
+    </form>
     <div class="table-responsive">
         <table class="table table-striped align-middle">
             <thead><tr><th>Employer</th><th>Current Usage</th><th>Request</th><th>Status</th><th>Action</th></tr></thead>
@@ -70,6 +89,7 @@ include __DIR__ . '/../includes/header.php';
             </tbody>
         </table>
     </div>
+    <?php if ($pagination['total_pages'] > 1): ?><nav class="mt-3" aria-label="Quota request pages"><ul class="pagination mb-0"><?php foreach (paginationPages($pagination) as $page): ?><li class="page-item <?php echo $page === $pagination['page'] ? 'active' : ''; ?>"><a class="page-link" href="<?php echo e(paginationUrl('admin/quota-requests.php', $filters, $page)); ?>"><?php echo $page; ?></a></li><?php endforeach; ?></ul></nav><?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

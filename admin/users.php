@@ -18,7 +18,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     redirect('admin/users.php');
 }
 
-$users = $conn->query('SELECT u.*, ep.company_name FROM users u LEFT JOIN employer_profiles ep ON ep.user_id = u.id ORDER BY u.created_at DESC');
+$filters = [
+    'name' => sanitize($_GET['name'] ?? ''),
+    'email' => sanitize($_GET['email'] ?? ''),
+    'role' => sanitize($_GET['role'] ?? ''),
+    'status_filter' => sanitize($_GET['status_filter'] ?? ''),
+    'company' => sanitize($_GET['company'] ?? ''),
+];
+$where = [];
+$types = '';
+$params = [];
+if ($filters['name'] !== '') { $where[] = 'u.name LIKE ?'; $types .= 's'; $params[] = '%' . $filters['name'] . '%'; }
+if ($filters['email'] !== '') { $where[] = 'u.email LIKE ?'; $types .= 's'; $params[] = '%' . $filters['email'] . '%'; }
+if (in_array($filters['role'], ['admin', 'employer', 'jobseeker'], true)) { $where[] = 'u.role = ?'; $types .= 's'; $params[] = $filters['role']; }
+if (in_array($filters['status_filter'], ['active', 'blocked', 'pending'], true)) { $where[] = 'u.status = ?'; $types .= 's'; $params[] = $filters['status_filter']; }
+if ($filters['company'] !== '') { $where[] = 'ep.company_name LIKE ?'; $types .= 's'; $params[] = '%' . $filters['company'] . '%'; }
+$whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+$totalRow = preparedQuery($conn, 'SELECT COUNT(*) AS total FROM users u LEFT JOIN employer_profiles ep ON ep.user_id = u.id' . $whereSql, $types, $params)->fetch_assoc();
+$pagination = paginationData($totalRow['total'] ?? 0, (int)($_GET['page'] ?? 1));
+$listTypes = $types . 'ii';
+$listParams = array_merge($params, [$pagination['per_page'], $pagination['offset']]);
+$users = preparedQuery($conn, 'SELECT u.*, ep.company_name FROM users u LEFT JOIN employer_profiles ep ON ep.user_id = u.id' . $whereSql . ' ORDER BY u.created_at DESC LIMIT ? OFFSET ?', $listTypes, $listParams);
 $pageTitle = 'Manage Users';
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -28,6 +48,15 @@ include __DIR__ . '/../includes/header.php';
         <h3 class="fw-bold mb-0">Users</h3>
         <a href="<?php echo e(url('admin/index.php')); ?>" class="btn btn-outline-primary btn-sm">Back to Dashboard</a>
     </div>
+
+    <form method="GET" class="row g-2 mb-4">
+        <div class="col-md-3"><input class="form-control" name="name" placeholder="Name" value="<?php echo e($filters['name']); ?>"></div>
+        <div class="col-md-3"><input class="form-control" type="email" name="email" placeholder="Email" value="<?php echo e($filters['email']); ?>"></div>
+        <div class="col-md-2"><select class="form-select" name="role"><option value="">All roles</option><?php foreach (['admin', 'employer', 'jobseeker'] as $role): ?><option value="<?php echo $role; ?>" <?php echo $filters['role'] === $role ? 'selected' : ''; ?>><?php echo ucfirst($role); ?></option><?php endforeach; ?></select></div>
+        <div class="col-md-2"><select class="form-select" name="status_filter"><option value="">All statuses</option><?php foreach (['active', 'blocked', 'pending'] as $status): ?><option value="<?php echo $status; ?>" <?php echo $filters['status_filter'] === $status ? 'selected' : ''; ?>><?php echo ucfirst($status); ?></option><?php endforeach; ?></select></div>
+        <div class="col-md-2"><input class="form-control" name="company" placeholder="Company" value="<?php echo e($filters['company']); ?>"></div>
+        <div class="col-12 d-flex gap-2"><button class="btn btn-primary" type="submit">Search</button><a class="btn btn-outline-primary" href="<?php echo e(url('admin/users.php')); ?>">Clear</a></div>
+    </form>
 
     <div class="table-responsive">
         <table class="table table-striped align-middle">
@@ -65,6 +94,7 @@ include __DIR__ . '/../includes/header.php';
             </tbody>
         </table>
     </div>
+    <?php if ($pagination['total_pages'] > 1): ?><nav class="mt-3" aria-label="Users pages"><ul class="pagination mb-0"><?php foreach (paginationPages($pagination) as $page): ?><li class="page-item <?php echo $page === $pagination['page'] ? 'active' : ''; ?>"><a class="page-link" href="<?php echo e(paginationUrl('admin/users.php', $filters, $page)); ?>"><?php echo $page; ?></a></li><?php endforeach; ?></ul></nav><?php endif; ?>
 </div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

@@ -269,3 +269,60 @@ function getEmployerQuota($conn, $employerId)
     $quota['posts_used'] = $used;
     return $quota;
 }
+
+function paginationData($total, $page, $perPage = 25)
+{
+    $perPage = max(1, (int)$perPage);
+    $total = max(0, (int)$total);
+    $totalPages = max(1, (int)ceil($total / $perPage));
+    $page = min(max(1, (int)$page), $totalPages);
+
+    return [
+        'page' => $page,
+        'per_page' => $perPage,
+        'total' => $total,
+        'total_pages' => $totalPages,
+        'offset' => ($page - 1) * $perPage,
+    ];
+}
+
+function paginationUrl($path, $params, $page)
+{
+    $params['page'] = $page;
+    return url($path . '?' . http_build_query(array_filter($params, static function ($value) {
+        return $value !== '' && $value !== null;
+    })));
+}
+
+function paginationPages($pagination)
+{
+    $pages = [1, $pagination['page'] - 1, $pagination['page'], $pagination['page'] + 1, $pagination['total_pages']];
+    $pages = array_filter(array_unique($pages), static function ($page) use ($pagination) {
+        return $page >= 1 && $page <= $pagination['total_pages'];
+    });
+    sort($pages);
+    return $pages;
+}
+
+function preparedQuery($conn, $sql, $types = '', $params = [])
+{
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        return false;
+    }
+
+    if ($types !== '' && $params) {
+        $references = [];
+        foreach ($params as $key => $value) {
+            $references[$key] = &$params[$key];
+        }
+        array_unshift($references, $types);
+        call_user_func_array([$stmt, 'bind_param'], $references);
+    }
+
+    if (!$stmt->execute()) {
+        return false;
+    }
+
+    return $stmt->get_result();
+}

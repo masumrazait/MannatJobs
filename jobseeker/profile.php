@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $university = sanitize($_POST['university'] ?? '');
     $stream = sanitize($_POST['stream'] ?? '');
     $profession = sanitize($_POST['profession'] ?? '');
+    $noticePeriod = sanitize($_POST['notice_period'] ?? '');
     $projects = sanitize($_POST['projects'] ?? '');
     $company = sanitize($_POST['company'] ?? '');
     $address = sanitize($_POST['address'] ?? '');
@@ -47,8 +48,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $profileImage = $upload;
     }
 
-    $stmt = $conn->prepare('UPDATE jobseeker_profiles SET resume_path = ?, profile_photo = ?, skills = ?, experience = ?, education = ?, degree = ?, university = ?, stream = ?, profession = ?, projects = ?, company = ?, address = ?, state = ?, city = ? WHERE user_id = ?');
-    $stmt->bind_param('ssssssssssssssi', $resumePath, $profilePhoto, $skills, $experience, $education, $degree, $university, $stream, $profession, $projects, $company, $address, $state, $city, $userId);
+    $allowedNoticePeriods = ['Immediate joiner', '1 month', '2 months', '3 months'];
+    if ($noticePeriod !== '' && !in_array($noticePeriod, $allowedNoticePeriods, true)) {
+        setFlash('danger', 'Please select a valid notice period.');
+        redirect('jobseeker/profile.php');
+    }
+    $stmt = $conn->prepare('UPDATE jobseeker_profiles SET resume_path = ?, profile_photo = ?, skills = ?, experience = ?, education = ?, degree = ?, university = ?, stream = ?, profession = ?, notice_period = ?, projects = ?, company = ?, address = ?, state = ?, city = ? WHERE user_id = ?');
+    $stmt->bind_param('sssssssssssssssi', $resumePath, $profilePhoto, $skills, $experience, $education, $degree, $university, $stream, $profession, $noticePeriod, $projects, $company, $address, $state, $city, $userId);
     if ($stmt->execute()) {
         if ($profileImage) {
             $imageStmt = $conn->prepare('UPDATE jobseeker_profiles SET profile_photo_data = ?, profile_photo_mime = ? WHERE user_id = ?');
@@ -116,6 +122,15 @@ include __DIR__ . '/../includes/header.php';
             <div class="col-md-6">
                 <label class="form-label">Current or most recent company</label>
                 <input type="text" class="form-control" name="company" value="<?php echo e($profile['company'] ?? ''); ?>" placeholder="Company name">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Notice period</label>
+                <select class="form-select" name="notice_period">
+                    <option value="">Select notice period</option>
+                    <?php foreach (['Immediate joiner', '1 month', '2 months', '3 months'] as $noticeOption): ?>
+                        <option value="<?php echo e($noticeOption); ?>" <?php echo ($profile['notice_period'] ?? '') === $noticeOption ? 'selected' : ''; ?>><?php echo e($noticeOption); ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
         </div>
     </div>

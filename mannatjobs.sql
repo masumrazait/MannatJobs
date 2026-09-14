@@ -25,6 +25,8 @@ CREATE TABLE users (
     phone VARCHAR(30) DEFAULT NULL,
     status ENUM('active', 'blocked', 'pending') NOT NULL DEFAULT 'active',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_users_name (name),
+    INDEX idx_users_email (email),
     INDEX idx_users_role (role),
     INDEX idx_users_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -41,6 +43,7 @@ CREATE TABLE jobseeker_profiles (
     university VARCHAR(180) DEFAULT NULL,
     stream VARCHAR(150) DEFAULT NULL,
     profession VARCHAR(150) DEFAULT NULL,
+    notice_period VARCHAR(30) DEFAULT NULL,
     projects TEXT DEFAULT NULL,
     company VARCHAR(180) DEFAULT NULL,
     address VARCHAR(255) DEFAULT NULL,
@@ -116,7 +119,8 @@ CREATE TABLE jobs (
     INDEX idx_jobs_employer (employer_id),
     INDEX idx_jobs_status (status),
     INDEX idx_jobs_location (location),
-    INDEX idx_jobs_category (category_id)
+    INDEX idx_jobs_category (category_id),
+    INDEX idx_jobs_title (title)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE applications (
@@ -134,7 +138,8 @@ CREATE TABLE applications (
     UNIQUE KEY uq_application_once (job_id, jobseeker_id),
     INDEX idx_applications_job (job_id),
     INDEX idx_applications_jobseeker (jobseeker_id),
-    INDEX idx_applications_status (status)
+    INDEX idx_applications_status (status),
+    INDEX idx_applications_applied_at (applied_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE saved_jobs (
